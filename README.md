@@ -13,10 +13,15 @@ A full-stack skateboard e-commerce store. It's a modern rebuild of a PHP + MySQL
 - Persistent cart (quantity limits by stock, free-shipping threshold, order summary)
 - 22 product pages statically generated from the database and revalidated every 5 minutes
 
-**Phase 2 (in progress)**
-- Customer accounts and demo login
-- PayPal sandbox checkout, order history and tracking
-- Return requests with photo upload
+**Phase 2 (live)**
+- Email/password accounts with [Better Auth](https://better-auth.com), plus a one-click demo customer login
+- Checkout with server-side price validation and **atomic stock reservation** (a single SQL statement reserves every line or none, so stock can't oversell)
+- Payments: simulated demo card, or **PayPal sandbox** when `NEXT_PUBLIC_PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` are set (stock is released if a capture fails)
+- Order history, order timeline (placed → paid → shipped → delivered), courier and tracking number
+- Return requests (one per order) with optional photo upload to Vercel Blob
+- Verified-buyer reviews: only customers who bought an item can review it
+
+**Demo login:** `demo@skategarage.dev` / `skate-demo-2026` (or click "Continue as demo customer").
 
 **Phase 3 (planned)**
 - Admin dashboard: sales charts, product and inventory management, order status updates
@@ -30,6 +35,10 @@ A full-stack skateboard e-commerce store. It's a modern rebuild of a PHP + MySQL
 | Styling | Tailwind CSS with shadcn/ui-style components (Zinc palette) |
 | Database | Neon serverless Postgres |
 | ORM | Drizzle ORM |
+| Auth | Better Auth (sessions in Postgres) |
+| Payments | PayPal Orders v2 API (sandbox) |
+| File storage | Vercel Blob |
+| Validation | Zod |
 | Hosting | Vercel (Singapore region, close to the database) |
 
 ## From PHP to Next.js
@@ -39,7 +48,8 @@ A full-stack skateboard e-commerce store. It's a modern rebuild of a PHP + MySQL
 | ~20k lines of PHP pages + Bootstrap | Typed React components and server-side data access |
 | MySQL on XAMPP | Serverless Postgres (Neon) |
 | Page reload for every filter | URL-driven filters with server rendering |
-| Session-based cart | Client cart persisted in localStorage (server cart arrives with accounts) |
+| Session-based cart | Client cart in localStorage, validated server-side at checkout |
+| PHP sessions + manual password hashing | Better Auth sessions, rate limiting and scrypt password hashing |
 
 ## Run locally
 
@@ -54,10 +64,10 @@ npm run dev
 
 ```
 src/
-  app/            # routes: home, shop, product/[slug], cart
+  app/            # routes: home, shop, product/[slug], cart, checkout, account, login
   components/     # UI, cart provider, filters, product card
   db/             # Drizzle schema and client
-  lib/            # queries and utilities
+  lib/            # queries, server actions (orders, payments, returns, reviews), auth
 scripts/          # database setup + catalog seed
 ```
 

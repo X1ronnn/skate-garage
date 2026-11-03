@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { CartButton } from "./cart-button";
+import { UserMenu } from "./user-menu";
 
 const nav = [
   { href: "/shop", label: "Shop all" },
@@ -32,6 +33,7 @@ export function SiteHeader() {
           </label>
         </form>
         <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <UserMenu />
           <CartButton />
         </div>
       </div>

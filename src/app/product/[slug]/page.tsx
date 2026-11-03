@@ -8,6 +8,7 @@ import { AddToCart } from "@/components/add-to-cart";
 import { ProductCard } from "@/components/product-card";
 import { Rating } from "@/components/rating";
 import { Badge } from "@/components/ui/badge";
+import { ReviewForm } from "@/components/review-form";
 
 export const revalidate = 300;
 type Params = Promise<{ slug: string }>;
@@ -77,7 +78,7 @@ export default async function ProductPage({ params }: { params: Params }) {
         </div>
       </div>
 
-      <section className="mt-16 border-t border-border pt-10">
+      <section id="reviews" className="mt-16 scroll-mt-24 border-t border-border pt-10">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 className="text-xl font-semibold">Customer reviews</h2>
           <Rating value={product.rating} count={product.reviewCount} className="text-sm" />
@@ -89,7 +90,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             {reviews.map((r) => (
               <li key={r.id} className="rounded-lg border border-border p-5">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{r.author}</p>
+                  <p className="text-sm font-medium">{r.author}{r.userId && <span className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Verified buyer</span>}</p>
                   <time className="text-xs text-muted-foreground" dateTime={r.createdAt.toISOString()}>
                     {r.createdAt.toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}
                   </time>
@@ -100,7 +101,8 @@ export default async function ProductPage({ params }: { params: Params }) {
             ))}
           </ul>
         )}
-        <p className="mt-4 text-xs text-muted-foreground">Sample reviews for this demo. Verified-buyer reviews arrive with accounts in Phase 2.</p>
+        <div className="mt-6"><ReviewForm productId={product.id} slug={product.slug} /></div>
+        <p className="mt-4 text-xs text-muted-foreground">Older reviews are sample data for this demo. New reviews come from verified buyers.</p>
       </section>
 
       {related.length > 0 && (

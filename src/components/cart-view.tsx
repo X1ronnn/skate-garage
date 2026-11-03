@@ -4,11 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "./cart-provider";
-import { Button, buttonClass } from "./ui/button";
+import { buttonClass } from "./ui/button";
 import { formatPrice } from "@/lib/utils";
 
-const FREE_SHIPPING = 3000;
-const SHIPPING = 150;
+import { FREE_SHIPPING_THRESHOLD as FREE_SHIPPING, SHIPPING_FEE as SHIPPING } from "@/lib/order-utils";
 
 export function CartView() {
   const { items, subtotal, setQty, remove, ready, clear } = useCart();
@@ -65,8 +64,8 @@ export function CartView() {
           {shipping > 0 && <p className="text-xs text-muted-foreground">Add {formatPrice(FREE_SHIPPING - subtotal)} more for free shipping.</p>}
           <div className="flex justify-between border-t border-border pt-3 text-base font-semibold"><dt>Total</dt><dd>{formatPrice(subtotal + shipping)}</dd></div>
         </dl>
-        <Button size="lg" className="mt-6 w-full" disabled title="PayPal sandbox checkout ships in Phase 2">Checkout with PayPal</Button>
-        <p className="mt-2 text-center text-xs text-muted-foreground">PayPal sandbox checkout is coming in Phase 2.</p>
+        <Link href="/checkout" className={buttonClass("default", "lg", "mt-6 w-full")}>Proceed to checkout</Link>
+        <p className="mt-2 text-center text-xs text-muted-foreground">Demo store: payments are simulated or PayPal sandbox.</p>
         <button className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground" onClick={clear}>Clear cart</button>
       </aside>
     </div>
