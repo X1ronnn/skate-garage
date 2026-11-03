@@ -23,6 +23,8 @@ A full-stack skateboard e-commerce store. It's a modern rebuild of a PHP + MySQL
 
 **Demo login:** `demo@skategarage.dev` / `skate-demo-2026` (or click "Continue as demo customer").
 
+**PayPal sandbox buyer:** `sb-3nm4z53689497@personal.example.com` / `SkateDemo2026!` (sandbox only, fake money).
+
 **Phase 3 (planned)**
 - Admin dashboard: sales charts, product and inventory management, order status updates
 

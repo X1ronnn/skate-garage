@@ -115,7 +115,11 @@ export function CheckoutClient({ defaults, paypalClientId }: { defaults: Default
                     }}
                     onError={() => setError("PayPal ran into a problem. Please try again.")}
                   />
-                  <p className="text-xs text-muted-foreground">PayPal sandbox: use a sandbox buyer account. No real money moves.</p>
+                  <div className="rounded-md bg-muted/60 p-3 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">PayPal sandbox test buyer (fake money)</p>
+                    <p className="mt-1">Email: <span className="font-mono">sb-3nm4z53689497@personal.example.com</span></p>
+                    <p>Password: <span className="font-mono">SkateDemo2026!</span></p>
+                  </div>
                 </PayPalScriptProvider>
               ) : null}
               <div className={paypalClientId ? "border-t border-border pt-4" : ""}>
