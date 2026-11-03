@@ -23,6 +23,7 @@ export function SiteFooter() {
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li><a href="https://github.com/X1ronnn/skate-garage" className="hover:text-foreground">Source code</a></li>
             <li><a href="https://dwight-corpuz.vercel.app" className="hover:text-foreground">Built by Arvin Dwight Corpuz</a></li>
+            <li><a href="https://www.linkedin.com/in/arvin-dwight-corpuz/" rel="me" className="hover:text-foreground">Arvin Dwight Corpuz on LinkedIn</a></li>
           </ul>
         </div>
       </div>

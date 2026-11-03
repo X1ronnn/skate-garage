@@ -2,7 +2,7 @@
 
 A full-stack skateboard e-commerce store. It's a modern rebuild of a PHP + MySQL shop I built in 2023, now on **Next.js 15, TypeScript, Tailwind CSS, Drizzle ORM and Neon Postgres**, deployed on Vercel.
 
-**Live demo:** https://skate-garage.vercel.app &nbsp;·&nbsp; **Author:** [Arvin Dwight Corpuz](https://dwight-corpuz.vercel.app)
+**Live demo:** https://skate-garage.vercel.app &nbsp;·&nbsp; **Author:** [Arvin Dwight Corpuz](https://dwight-corpuz.vercel.app) ([LinkedIn](https://www.linkedin.com/in/arvin-dwight-corpuz/))
 
 ## Features
 
