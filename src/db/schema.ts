@@ -22,6 +22,7 @@ export const products = pgTable("products", {
   material: text("material"),
   image: text("image").notNull(),
   featured: boolean("featured").notNull().default(false),
+  archived: boolean("archived").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -147,6 +148,7 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type Role = "customer" | "admin" | "demo_admin";
 export type Product = typeof products.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type Review = typeof reviews.$inferSelect;

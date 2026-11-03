@@ -25,8 +25,15 @@ A full-stack skateboard e-commerce store. It's a modern rebuild of a PHP + MySQL
 
 **PayPal sandbox buyer:** `sb-3nm4z53689497@personal.example.com` / `SkateDemo2026!` (sandbox only, fake money).
 
-**Phase 3 (planned)**
-- Admin dashboard: sales charts, product and inventory management, order status updates
+**Phase 3 (live): admin dashboard** at `/admin`
+- Role-based access (`customer`, `admin`, read-only `demo_admin`). Every admin query and server action checks the role on the server, not just the layout
+- Dashboard: 30-day revenue, orders and average order value vs the previous period, daily revenue chart (SQL `generate_series`, Manila time), best sellers, low stock, recent orders
+- Orders: search and status filters; ship with courier and tracking number, mark delivered, cancel and restock
+- Returns: approve, reject, or mark refunded (which restocks the items)
+- Products: create and edit with image upload to Vercel Blob, archive and restore (archived items vanish from the store but stay in past orders), quick restock; store pages revalidate on save
+- Review moderation
+
+**Demo admin (read-only):** `admin@skategarage.dev` / `skate-admin-demo` (or click "View the admin dashboard" on the sign-in page). Browse everything; changes are blocked on the server. The dashboard includes seeded sample sales history.
 
 ## Tech stack
 
@@ -62,14 +69,17 @@ npm run db:setup             # creates tables and seeds the catalog
 npm run dev
 ```
 
+To make yourself a full admin, sign up in the app, then run `ADMIN_EMAIL=you@example.com npm run db:setup`.
+
 ## Project structure
 
 ```
 src/
-  app/            # routes: home, shop, product/[slug], cart, checkout, account, login
+  app/            # routes: home, shop, product/[slug], cart, checkout, account, login, admin/*
   components/     # UI, cart provider, filters, product card
   db/             # Drizzle schema and client
   lib/            # queries, server actions (orders, payments, returns, reviews), auth
+  lib/admin/      # role guard, admin queries and server actions
 scripts/          # database setup + catalog seed
 ```
 

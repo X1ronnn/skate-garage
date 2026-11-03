@@ -6,6 +6,7 @@ import { hashPassword } from "better-auth/crypto";
 import { randomUUID } from "node:crypto";
 
 export const DEMO = { email: "demo@skategarage.dev", password: "skate-demo-2026", name: "Demo Skater" };
+export const DEMO_ADMIN = { email: "admin@skategarage.dev", password: "skate-admin-demo", name: "Demo Admin" };
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -128,6 +129,64 @@ if (demoOrders === 0) {
   };
   await seedOrder({ items: [["justice-cosmos-deck", 1], ["silver-pro-t-tool", 1]], status: "delivered", daysAgo: 12, courier: "J&T Express", tracking: "JT0012345678" });
   await seedOrder({ items: [["complete-skateboard-ocean", 1]], status: "shipped", daysAgo: 2, courier: "LBC", tracking: "LBC-88341207" });
+}
+
+// ---------- Phase 3: admin ----------
+await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE`;
+await sql`CREATE INDEX IF NOT EXISTS orders_created_idx ON orders(created_at)`;
+let [demoAdmin] = await sql`SELECT id FROM "user" WHERE email = ${DEMO_ADMIN.email}`;
+if (!demoAdmin) {
+  const id = randomUUID();
+  await sql`INSERT INTO "user" (id, name, email, email_verified, role) VALUES (${id}, ${DEMO_ADMIN.name}, ${DEMO_ADMIN.email}, true, 'demo_admin')`;
+  await sql`INSERT INTO account (id, account_id, provider_id, user_id, password) VALUES (${randomUUID()}, ${id}, 'credential', ${id}, ${await hashPassword(DEMO_ADMIN.password)})`;
+}
+// Optional: promote a real admin by email. Usage: ADMIN_EMAIL=you@example.com npm run db:setup
+if (process.env.ADMIN_EMAIL) {
+  const res = await sql`UPDATE "user" SET role = 'admin' WHERE lower(email) = lower(${process.env.ADMIN_EMAIL}) RETURNING email`;
+  console.log(res.length ? `Promoted ${res[0].email} to admin` : `No user found with email ${process.env.ADMIN_EMAIL}`);
+}
+
+// Sample sales history for the admin dashboard (sample customers cannot log in)
+const [{ total }] = await sql`SELECT count(*)::int AS total FROM orders`;
+if (total < 10) {
+  const people = [["Migs Reyes","Cebu City","Cebu"],["Ana Lim","Makati","Metro Manila"],["Carlo Dizon","Davao City","Davao del Sur"],["Jessa Mendoza","Iloilo City","Iloilo"],["Paolo Santos","Quezon City","Metro Manila"],["Bea Torres","Zamboanga City","Zamboanga del Sur"]];
+  const ids = [];
+  for (const [name] of people) {
+    const email = name.toLowerCase().replace(/\s+/g, ".") + "@sample.skategarage.dev";
+    let [u] = await sql`SELECT id FROM "user" WHERE email = ${email}`;
+    if (!u) { u = { id: randomUUID() }; await sql`INSERT INTO "user" (id, name, email, email_verified, role) VALUES (${u.id}, ${name}, ${email}, true, 'customer')`; }
+    ids.push(u.id);
+  }
+  const catalog = await sql`SELECT id, name, image, price FROM products ORDER BY id`;
+  let seedN = 7;
+  const rnd = () => (seedN = (seedN * 9301 + 49297) % 233280) / 233280;
+  const couriers = [["J&T Express","JT"],["LBC","LBC-"],["Ninja Van","NV"]];
+  for (let k = 0; k < 42; k++) {
+    const pi = Math.floor(rnd() * people.length);
+    const [name, city, province] = people[pi];
+    const daysAgo = 1 + Math.floor(rnd() * 45);
+    const created = new Date(Date.now() - daysAgo * 86400000 - Math.floor(rnd() * 36000000));
+    const lines = Array.from({ length: 1 + Math.floor(rnd() * 2) }, () => catalog[Math.floor(rnd() * catalog.length)]);
+    const uniq = [...new Map(lines.map((l) => [l.id, l])).values()];
+    const subtotal = uniq.reduce((n, l) => n + l.price, 0);
+    const ship = subtotal >= 3000 ? 0 : 150;
+    const status = daysAgo > 6 ? (rnd() < 0.08 ? "returned" : "delivered") : daysAgo > 2 ? "shipped" : "paid";
+    const [cn, cp] = couriers[Math.floor(rnd() * couriers.length)];
+    const shipped = status !== "paid" ? new Date(created.getTime() + 86400000) : null;
+    const delivered = status === "delivered" || status === "returned" ? new Date(created.getTime() + 3 * 86400000) : null;
+    const [o] = await sql`INSERT INTO orders (user_id, status, subtotal, shipping_fee, total, payment_method, payment_ref, full_name, phone, address, city, province, postal_code, courier, tracking_number, paid_at, shipped_at, delivered_at, created_at)
+      VALUES (${ids[pi]}, ${status}, ${subtotal}, ${ship}, ${subtotal + ship}, ${rnd() < 0.5 ? "paypal" : "demo"}, ${"SAMPLE-" + (1000 + k)}, ${name}, '0917 000 0000', 'Sample address', ${city}, ${province}, '1000',
+        ${shipped ? cn : null}, ${shipped ? cp + String(10000000 + Math.floor(rnd() * 89999999)) : null}, ${created.toISOString()}, ${shipped?.toISOString() ?? null}, ${delivered?.toISOString() ?? null}, ${created.toISOString()})
+      RETURNING id`;
+    for (const l of uniq) await sql`INSERT INTO order_items (order_id, product_id, name, image, price, quantity) VALUES (${o.id}, ${l.id}, ${l.name}, ${l.image}, ${l.price}, 1)`;
+    if (status === "returned") await sql`INSERT INTO returns (order_id, user_id, reason, status, created_at) VALUES (${o.id}, ${ids[pi]}, 'Item not as described', 'refunded', ${new Date(delivered.getTime() + 2 * 86400000).toISOString()}) ON CONFLICT DO NOTHING`;
+  }
+  // a couple of pending returns for the admin to act on
+  const pending = await sql`SELECT id, user_id FROM orders WHERE status = 'delivered' AND payment_ref LIKE 'SAMPLE-%' ORDER BY created_at DESC LIMIT 2`;
+  for (const p of pending) {
+    await sql`INSERT INTO returns (order_id, user_id, reason, details) VALUES (${p.id}, ${p.user_id}, 'Damaged on arrival', 'Nose chipped during delivery (sample).') ON CONFLICT DO NOTHING`;
+    await sql`UPDATE orders SET status = 'return_requested' WHERE id = ${p.id}`;
+  }
 }
 
 const [summary] = await sql`SELECT (SELECT count(*)::int FROM categories) AS categories, (SELECT count(*)::int FROM products) AS products, (SELECT count(*)::int FROM reviews) AS reviews, (SELECT count(*)::int FROM "user") AS users, (SELECT count(*)::int FROM orders) AS orders`;

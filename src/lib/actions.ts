@@ -41,7 +41,7 @@ export async function placeOrder(input: z.infer<typeof placeOrderSchema>): Promi
     const rows = await db.select().from(products).where(inArray(products.id, items.map((i) => i.id)));
     const lines = items.map((i) => ({ item: i, product: rows.find((r) => r.id === i.id) }));
     for (const { item, product } of lines) {
-      if (!product) return { ok: false, error: "One of the items is no longer available." };
+      if (!product || product.archived) return { ok: false, error: "One of the items is no longer available." };
       if (product.stock < item.qty) return { ok: false, error: `Only ${product.stock} left of ${product.name}. Please update your cart.` };
     }
     // Prices always come from the database, never from the client.

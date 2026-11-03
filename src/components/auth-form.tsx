@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 
 export const DEMO_CREDENTIALS = { email: "demo@skategarage.dev", password: "skate-demo-2026" };
+export const DEMO_ADMIN_CREDENTIALS = { email: "admin@skategarage.dev", password: "skate-admin-demo" };
 
 const inputCls = "mt-1.5 h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 
@@ -21,7 +22,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function submit(e?: React.FormEvent, creds?: { email: string; password: string }) {
+  async function submit(e?: React.FormEvent, creds?: { email: string; password: string }, dest?: string) {
     e?.preventDefault();
     setError(null);
     setLoading(true);
@@ -31,7 +32,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         : await authClient.signIn.email(creds ?? { email, password });
     setLoading(false);
     if (res.error) return setError(res.error.message ?? "Something went wrong. Please try again.");
-    router.push(safeNext);
+    router.push(dest ?? safeNext);
     router.refresh();
   }
 
@@ -48,6 +49,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           <p className="mt-1 text-muted-foreground">Use the demo account: <span className="font-mono text-xs">{DEMO_CREDENTIALS.email}</span></p>
           <Button variant="outline" className="mt-3 w-full" disabled={loading} onClick={() => submit(undefined, DEMO_CREDENTIALS)}>
             Continue as demo customer
+          </Button>
+          <Button variant="ghost" className="mt-1 w-full" disabled={loading} onClick={() => submit(undefined, DEMO_ADMIN_CREDENTIALS, "/admin")}>
+            View the admin dashboard (read-only)
           </Button>
         </div>
       )}

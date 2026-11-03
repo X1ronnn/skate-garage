@@ -40,7 +40,7 @@ export type ShopFilters = {
 };
 
 export async function getProducts(f: ShopFilters = {}) {
-  const where: SQL[] = [];
+  const where: SQL[] = [eq(products.archived, false)];
   if (f.category) where.push(eq(categories.slug, f.category));
   if (f.brand) where.push(eq(products.brand, f.brand));
   if (f.q) {
@@ -57,21 +57,21 @@ export async function getProducts(f: ShopFilters = {}) {
     : f.sort === "rating" ? [sql`${ratings.rating} DESC NULLS LAST`]
     : [desc(products.featured), asc(products.name)];
 
-  return baseQuery().where(where.length ? and(...where) : undefined).orderBy(...order);
+  return baseQuery().where(and(...where)).orderBy(...order);
 }
 
 export async function getFeaturedProducts(limit = 8) {
-  return baseQuery().where(eq(products.featured, true)).orderBy(desc(products.createdAt)).limit(limit);
+  return baseQuery().where(and(eq(products.featured, true), eq(products.archived, false))).orderBy(desc(products.createdAt)).limit(limit);
 }
 
 export async function getProductBySlug(slug: string) {
-  const [product] = await baseQuery().where(eq(products.slug, slug)).limit(1);
+  const [product] = await baseQuery().where(and(eq(products.slug, slug), eq(products.archived, false))).limit(1);
   return product ?? null;
 }
 
 export async function getRelatedProducts(categoryId: number, excludeId: number, limit = 4) {
   return baseQuery()
-    .where(and(eq(products.categoryId, categoryId), ne(products.id, excludeId)))
+    .where(and(eq(products.categoryId, categoryId), ne(products.id, excludeId), eq(products.archived, false)))
     .orderBy(desc(products.featured), asc(products.price))
     .limit(limit);
 }
@@ -84,16 +84,16 @@ export async function getCategoriesWithCounts() {
   return db
     .select({ ...getTableColumns(categories), productCount: sql<number>`count(${products.id})::int` })
     .from(categories)
-    .leftJoin(products, eq(products.categoryId, categories.id))
+    .leftJoin(products, and(eq(products.categoryId, categories.id), eq(products.archived, false)))
     .groupBy(categories.id)
     .orderBy(asc(categories.id));
 }
 
 export async function getBrands() {
-  const rows = await db.selectDistinct({ brand: products.brand }).from(products).orderBy(asc(products.brand));
+  const rows = await db.selectDistinct({ brand: products.brand }).from(products).where(eq(products.archived, false)).orderBy(asc(products.brand));
   return rows.map((r) => r.brand);
 }
 
 export async function getAllSlugs() {
-  return db.select({ slug: products.slug }).from(products);
+  return db.select({ slug: products.slug }).from(products).where(eq(products.archived, false));
 }
